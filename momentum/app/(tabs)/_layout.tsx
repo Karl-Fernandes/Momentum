@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform, TouchableOpacity, Text } from 'react-native';
-import { auth } from '../firebase/config';
+import { auth } from '../../firebase/config';
 
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';

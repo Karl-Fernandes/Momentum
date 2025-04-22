@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { onAuthStateChanged, User} from 'firebase/auth';
-import { auth } from './firebase/config';
+import { auth } from '../firebase/config';
 import { useSegments, useRouter } from 'expo-router';
 
 // Auth context
@@ -42,7 +42,7 @@ function AuthProvider({ children}: { children: React.ReactNode }) {
 
     if (!user && !inAuthGroup) {
       // Redirect to login if not authenticated
-      router.replace('/(auth)/login');
+      router.replace("/(auth)/home");
     } else if (user && inAuthGroup) {
       // Redirect to tabs if authenticated
       router.replace('/(tabs)');

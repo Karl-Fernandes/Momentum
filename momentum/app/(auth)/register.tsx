@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, Button, Alert } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebase/config';
+import { auth } from '@/firebase/config';
 import { Link } from 'expo-router';
 
 export default function RegisterScreen() {
