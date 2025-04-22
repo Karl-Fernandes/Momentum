@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'white',
-    borderRadius: 25,
+    borderRadius: 10,
     padding: 12,
     marginBottom: 15,
   },
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   },
   emailButton: {
     backgroundColor: '#1E88E5',
-    borderRadius: 25,
+    borderRadius: 10,
     padding: 15,
     marginBottom: 15,
     alignItems: 'center',
