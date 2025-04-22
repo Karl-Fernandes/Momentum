@@ -1,11 +1,27 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, StatusBar, SafeAreaView } from 'react-native';
 import GoogleLogo from '@/assets/images/google_logo.svg';
-
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 
 
 const MomentumApp: React.FC = () => {
-  
+  const router = useRouter();
+
+  const handleGoogleSignUp = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    console.log('Google sign up');
+  };
+
+  const handleEmailSignUp = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push('/(auth)/register');
+  };
+
+  const handleLogin = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    console.log('Login');
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -31,20 +47,20 @@ const MomentumApp: React.FC = () => {
       
       {/* Login options */}
       <View style={styles.loginContainer}>
-        <TouchableOpacity style={styles.googleButton} onPress={() => console.log('Google sign up')}>
-        <View style={styles.googleIconContainer}>
+        <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignUp}>
+          <View style={styles.googleIconContainer}>
             <GoogleLogo width={18} height={18} />
-        </View>
+          </View>
           <Text style={styles.googleButtonText}>Sign up with Google</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.emailButton} onPress={() => console.log('Email sign up')}>
+        <TouchableOpacity style={styles.emailButton} onPress={handleEmailSignUp}>
           <Text style={styles.emailButtonText}>Sign up with email</Text>
         </TouchableOpacity>
         
         <View style={styles.loginTextContainer}>
           <Text style={styles.loginText}>Already have account? </Text>
-          <TouchableOpacity onPress={() => console.log('Login')}>
+          <TouchableOpacity onPress={handleLogin}>
             <Text style={styles.loginLink}>Log in</Text>
           </TouchableOpacity>
         </View>
