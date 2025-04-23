@@ -1,237 +1,220 @@
 import React, { useState, useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View, TextInput, Button, Alert, ImageBackground, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View, TextInput, Button, Alert, ImageBackground, TouchableOpacity, Image, SafeAreaView } from 'react-native';
 import { Stack } from 'expo-router';
 import { auth } from '@/firebase/config';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, User } from 'firebase/auth';
+import GoogleLogo from '@/assets/images/google_logo.svg';
+import { FocusAwareStatusBar } from "@/components/FocusAwareStatusBar";
 
 // Background image (replace with your actual image path)
 
 // Login Screen
 function LoginScreen({ onLogin }: { onLogin: () => void }) {
-  const [email, setEmail] = useState<string>('');
+  
+  const [emailOrUsername, setEmailorUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-
-
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      onLogin();
-    } catch (error: any) {
-      Alert.alert('Login Failed', error.message);
-    }
-  };
-
-  const handleForgotPassword = () => {
-    Alert.alert('Forgot Password', 'This feature is not implemented yet.');
-  };
-
-  const handleGoogleLogin = () => {
-    Alert.alert('Google Login', 'This feature is not implemented yet.');
-  };
-
-  const handleFacebookLogin = () => {
-    Alert.alert('Facebook Login', 'This feature is not implemented yet.');
-  };
+  
 
   return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Login</Text>
-
-        <Text style={styles.label}>Email or username</Text>
+    <SafeAreaView style={styles.container}>
+      <FocusAwareStatusBar
+        barStyle="light-content"
+        backgroundColor="#222222"
+      />
+      
+      
+      
+      
+      {/* Form Inputs */}
+      <View style={styles.formContainer}>
+        <Text style={styles.inputLabel}>Email or Username</Text>
         <TextInput
           style={styles.input}
           placeholder="example@gmail.com"
-          placeholderTextColor="#888"
-          value={email}
-          onChangeText={setEmail}
+          placeholderTextColor="#666"
+          value={emailOrUsername}
+          onChangeText={setEmailorUsername}
           keyboardType="email-address"
           autoCapitalize="none"
         />
-
-        <Text style={styles.label}>Password</Text>
+        
+        <Text style={styles.inputLabel}>Password</Text>
         <TextInput
           style={styles.input}
           placeholder="minimum 6 characters"
-          placeholderTextColor="#888"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={true}
-        />
-
-        <TouchableOpacity onPress={handleForgotPassword}>
-          <Text style={styles.forgotPassword}>Forget Password?</Text>
-        </TouchableOpacity>
-
-        {loading ? ( <ActivityIndicator size="large" color="#0000ff" /> ) 
-        : <>
-        <Button title="login" onPress={handleLogin} color="#555" />
-        </>}
-
-        <Text style={styles.orText}>or</Text>
-
-        <TouchableOpacity style={styles.socialButton} onPress={handleGoogleLogin}>
-          <Text style={styles.socialButtonText}>Sign in with Google</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.socialButton} onPress={handleFacebookLogin}>
-          <Text style={styles.socialButtonText}>Login with Facebook</Text>
-        </TouchableOpacity>
-
-        <Button title="Go to Register" onPress={onLogin} color="#888" />
-      </View>
-  );
-}
-
-// Register Screen (keeping the same for now, you can style it similarly if needed)
-function RegisterScreen({ onRegister }: { onRegister: () => void }) {
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-
-  const handleRegister = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      onRegister();
-    } catch (error: any) {
-      Alert.alert('Registration Failed', error.message);
-    }
-  };
-
-  return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Register</Text>
-
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="example@gmail.com"
-          placeholderTextColor="#888"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-
-        <Text style={styles.label}>Password</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="minimum 6 characters"
-          placeholderTextColor="#888"
+          placeholderTextColor="#666"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
-
-        <TouchableOpacity style={styles.loginButton} onPress={handleRegister}>
-          <Text style={styles.loginButtonText}>Register</Text>
+        <Text style={styles.forgotText}>Forgot Password? </Text>
+            
+        {/* Continue Button */}
+        <TouchableOpacity style={styles.loginButton}>
+          <Text style={styles.loginButtonText}>Login</Text>
         </TouchableOpacity>
-
-        <Button title="Go to Login" onPress={onRegister} color="#888" />
       </View>
+
+      <View style={styles.orContainer}>
+          <View style={styles.orLine} />
+          <Text style={styles.orText}>OR</Text>
+          <View style={styles.orLine} />
+        </View>  
+
+        <TouchableOpacity
+          style={styles.googleButton}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#1E88E5" size="small" />
+          ) : (
+            <>
+              <View style={styles.googleIconContainer}>
+                <GoogleLogo width={18} height={18} />
+              </View>
+              <Text style={styles.googleButtonText}>Sign up with Google</Text>
+            </>
+          )}
+        </TouchableOpacity> 
+    </SafeAreaView>
   );
-}
-
-// Root Layout
-export default function RootLayout() {
-  const [user, setUser] = useState<User | null>(null);
-  const [initializing, setInitializing] = useState<boolean>(true);
-  const [showLogin, setShowLogin] = useState<boolean>(true);
-
-  useEffect(() => {
-    const subscriber = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      if (initializing) setInitializing(false);
-    });
-    return subscriber;
-  }, []);
-
-  if (initializing) return null;
-
-  if (!user) {
-    return showLogin ? (
-      <LoginScreen onLogin={() => setShowLogin(false)} />
-    ) : (
-      <RegisterScreen onRegister={() => setShowLogin(true)} />
-    );
-  }
-
-  return (
-    <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-    </Stack>
-  );
-}
+};
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    resizeMode: 'cover',
-  },
   container: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: '#000',
     padding: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)', // Semi-transparent overlay for readability
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+  forgotText: {
+    color: '#0074E4',
+    fontSize: 14,
     textAlign: 'center',
     marginBottom: 20,
   },
-  label: {
+  statusInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  timeText: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  rightStatusIcons: {
+    flexDirection: 'row',
+    gap: 5,
+  },
+  statusIconText: {
+    color: '#fff',
+    fontSize: 14,
+    marginLeft: 5,
+  },
+  logoContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 60,
+    marginBottom: 20,
+  },
+  logo: {
+    width: 200,
+    height: 200,
+    marginTop: -90,
+  },
+  formContainer: {
+    marginTop: 20,
+    width: '100%',
+  },
+  inputLabel: {
     color: '#fff',
     fontSize: 16,
-    marginBottom: 5,
+    marginBottom: 8,
+    fontWeight: '500',
   },
   input: {
-    height: 40,
-    backgroundColor: '#333',
+    backgroundColor: 'transparent',
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
     color: '#fff',
-    borderRadius: 5,
-    marginBottom: 15,
-    paddingHorizontal: 10,
+    paddingVertical: 10,
+    marginBottom: 20,
+    fontSize: 15,
   },
-  forgotPassword: {
-    color: '#00f',
-    textAlign: 'right',
-    marginBottom: 15,
+  termsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  termsText: {
+    color: '#fff',
+    fontSize: 14,
+    flex: 1,
+  },
+  termsLink: {
+    color: '#0074E4',
+  },
+  privacyLink: {
+    color: '#0074E4',
   },
   loginButton: {
-    backgroundColor: '#555',
-    paddingVertical: 10,
-    borderRadius: 5,
+    backgroundColor: '#0074E4',
+    padding: 15,
+    borderRadius: 10,
     alignItems: 'center',
-    marginBottom: 15,
+    marginTop: 10,
   },
   loginButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
+  },
+  orContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#333',
   },
   orText: {
-    color: '#888',
-    textAlign: 'center',
-    marginVertical: 10,
-  },
-  socialButton: {
-    backgroundColor: '#444',
-    paddingVertical: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  socialButtonText: {
     color: '#fff',
-    fontSize: 16,
+    paddingHorizontal: 10,
+    fontSize: 14,
+    fontWeight: '500',
   },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 15,
+  },
+  googleIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+    overflow: 'hidden',
+  },
+  googleIconText: {
+    color: '#EA4335',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  googleButtonText: {
+    color: 'black',
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
+    flex: 1,
+  }
 });
+
+export default LoginScreen;
