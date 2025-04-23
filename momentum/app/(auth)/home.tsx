@@ -9,24 +9,20 @@ import { auth } from '@/firebase/config';
 import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import Constants from 'expo-constants';
 
+
 // Complete any pending auth session
+WebBrowser.maybeCompleteAuthSession();
 
 const MomentumApp: React.FC = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Get Android client ID from app.json
-  const androidClientId = Constants.expoConfig?.extra?.googleAndroidClientId;
-
-  WebBrowser.maybeCompleteAuthSession();
-
-
-  // Configure Google Sign-In
+  // Configure Google Sign-In with web client ID and Firebase redirect handler
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: Constants.expoConfig?.extra?.googleWebClientId, // Web client ID
+    clientId: Constants.expoConfig?.extra?.googleWebClientId,
     scopes: ['openid', 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email'],
-    redirectUri: 'https://auth.expo.io/@krf0821/momentum', // Use the placeholder redirect URI
+    redirectUri: 'https://momentum0821.firebaseapp.com/__/auth/handler',
   });
 
   // Log for debugging
@@ -34,8 +30,20 @@ const MomentumApp: React.FC = () => {
     if (request) {
       console.log('Auth request ready with scopes:', request.scopes);
       console.log('Redirect URI:', request.redirectUri);
+      console.log('Client ID:', Constants.expoConfig?.extra?.googleWebClientId);
     }
   }, [request]);
+
+  // Log response for debugging
+  useEffect(() => {
+    if (response) {
+      console.log('Response received:', JSON.stringify(response, null, 2));
+      if (response?.type === 'error') {
+        console.log('Error details:', response.error);
+        console.log('Error params:', response.params);
+      }
+    }
+  }, [response]);
 
   // Handle Google Auth response
   useEffect(() => {
@@ -73,6 +81,9 @@ const MomentumApp: React.FC = () => {
     } else if (response?.type === 'error') {
       console.error('Google Sign-In Error:', response.error);
       setError('Google sign-in failed: ' + (response.error?.message || 'Unknown error'));
+    } else if (response?.type === 'dismiss') {
+      console.log('User dismissed the auth session');
+      setError('Sign-in cancelled');
     }
   }, [response]);
 
@@ -97,7 +108,7 @@ const MomentumApp: React.FC = () => {
       setLoading(false);
     }
   };
-  
+
   const handleEmailSignUp = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push('/(auth)/register');
