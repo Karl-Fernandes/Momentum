@@ -9,9 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.krf0821.momentum"
     },
     "android": {
+      "package": "com.krf0821.momentum",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -34,8 +36,20 @@
         }
       ]
     ],
+    "extra": {
+      "eas": {
+        "projectId": "04aaa9e8-e046-48b5-a089-d6a4650e39f7"
+      },
+      "googleWebClientId": "443859253397-j8r0bfv4lv1kptt5gpbfh5pr58e0df71.apps.googleusercontent.com",
+      "googleIosClientId": "YOUR_IOS_CLIENT_ID.apps.googleusercontent.com",
+      "googleAndroidClientId": "YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com",
+      "router": {
+        "origin": false
+      }
+    },
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "owner": "krf0821"
   }
 }

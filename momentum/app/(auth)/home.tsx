@@ -1,16 +1,70 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, StatusBar, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, StatusBar, SafeAreaView, ActivityIndicator } from 'react-native';
 import GoogleLogo from '@/assets/images/google_logo.svg';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import { auth } from '@/firebase/config';
+import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 
+// Initialize WebBrowser for Google auth
+WebBrowser.maybeCompleteAuthSession();
 
 const MomentumApp: React.FC = () => {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
-  const handleGoogleSignUp = () => {
+  // Set up Google Auth Request
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: '443859253397-j8r0bfv4lv1kptt5gpbfh5pr58e0df71.apps.googleusercontent.com',
+    webClientId: '443859253397-j8r0bfv4lv1kptt5gpbfh5pr58e0df71.apps.googleusercontent.com',
+    iosClientId: 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com',         
+    androidClientId: 'YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com',
+    scopes: ['profile', 'email']
+  });
+
+  // Handle Google Auth response
+  useEffect(() => {
+    if (response?.type === 'success') {
+      setLoading(true);
+      
+      try {
+        const { id_token } = response.params;
+        const credential = GoogleAuthProvider.credential(id_token);
+        
+        signInWithCredential(auth, credential)
+          .then(() => {
+            console.log("Logged in with Google!");
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            // Auth state listener in _layout.tsx will handle navigation
+          })
+          .catch(error => {
+            console.error("Firebase credential error:", error);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          })
+          .finally(() => {
+            setLoading(false);
+          });
+      } catch (error) {
+        console.error("Google auth error:", error);
+        setLoading(false);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+    }
+  }, [response]);
+
+  const handleGoogleSignUp = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    console.log('Google sign up');
+    setLoading(true);
+    
+    try {
+      await promptAsync();
+    } catch (error) {
+      console.error('Google sign in prompt error:', error);
+      setLoading(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
   };
 
   const handleEmailSignUp = () => {
@@ -20,7 +74,7 @@ const MomentumApp: React.FC = () => {
 
   const handleLogin = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    console.log('Login');
+    router.push('/(auth)/login');
   };
 
   return (
@@ -47,20 +101,34 @@ const MomentumApp: React.FC = () => {
       
       {/* Login options */}
       <View style={styles.loginContainer}>
-        <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignUp}>
-          <View style={styles.googleIconContainer}>
-            <GoogleLogo width={18} height={18} />
-          </View>
-          <Text style={styles.googleButtonText}>Sign up with Google</Text>
+        <TouchableOpacity 
+          style={styles.googleButton} 
+          onPress={handleGoogleSignUp}
+          disabled={loading || !request}
+        >
+          {loading ? (
+            <ActivityIndicator color="#1E88E5" size="small" />
+          ) : (
+            <>
+              <View style={styles.googleIconContainer}>
+                <GoogleLogo width={18} height={18} />
+              </View>
+              <Text style={styles.googleButtonText}>Sign up with Google</Text>
+            </>
+          )}
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.emailButton} onPress={handleEmailSignUp}>
+        <TouchableOpacity 
+          style={styles.emailButton} 
+          onPress={handleEmailSignUp}
+          disabled={loading}
+        >
           <Text style={styles.emailButtonText}>Sign up with email</Text>
         </TouchableOpacity>
         
         <View style={styles.loginTextContainer}>
           <Text style={styles.loginText}>Already have account? </Text>
-          <TouchableOpacity onPress={handleLogin}>
+          <TouchableOpacity onPress={handleLogin} disabled={loading}>
             <Text style={styles.loginLink}>Log in</Text>
           </TouchableOpacity>
         </View>
