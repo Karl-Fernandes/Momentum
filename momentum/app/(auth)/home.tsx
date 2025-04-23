@@ -1,72 +1,103 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, StatusBar, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, StatusBar, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
 import GoogleLogo from '@/assets/images/google_logo.svg';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
 import { auth } from '@/firebase/config';
 import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import Constants from 'expo-constants';
 
-// Initialize WebBrowser for Google auth
-WebBrowser.maybeCompleteAuthSession();
+// Complete any pending auth session
 
 const MomentumApp: React.FC = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Set up Google Auth Request
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: '443859253397-j8r0bfv4lv1kptt5gpbfh5pr58e0df71.apps.googleusercontent.com',
-    webClientId: '443859253397-j8r0bfv4lv1kptt5gpbfh5pr58e0df71.apps.googleusercontent.com',
-    iosClientId: 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com',         
-    androidClientId: 'YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com',
-    scopes: ['profile', 'email']
+  // Get Android client ID from app.json
+  const androidClientId = Constants.expoConfig?.extra?.googleAndroidClientId;
+
+  WebBrowser.maybeCompleteAuthSession();
+
+
+  // Configure Google Sign-In
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId: Constants.expoConfig?.extra?.googleWebClientId, // Web client ID
+    scopes: ['openid', 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email'],
+    redirectUri: 'https://auth.expo.io/@krf0821/momentum', // Use the placeholder redirect URI
   });
+
+  // Log for debugging
+  useEffect(() => {
+    if (request) {
+      console.log('Auth request ready with scopes:', request.scopes);
+      console.log('Redirect URI:', request.redirectUri);
+    }
+  }, [request]);
 
   // Handle Google Auth response
   useEffect(() => {
     if (response?.type === 'success') {
       setLoading(true);
-      
+      console.log('Success response received');
       try {
         const { id_token } = response.params;
+        console.log('ID token received:', id_token ? 'Yes' : 'No');
+        if (!id_token) {
+          setError('No ID token received from Google');
+          setLoading(false);
+          return;
+        }
         const credential = GoogleAuthProvider.credential(id_token);
-        
         signInWithCredential(auth, credential)
           .then(() => {
-            console.log("Logged in with Google!");
+            console.log('Successfully signed in with Firebase');
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            // Auth state listener in _layout.tsx will handle navigation
           })
-          .catch(error => {
-            console.error("Firebase credential error:", error);
+          .catch((error) => {
+            console.error('Firebase credential error:', error);
+            setError('Firebase sign-in failed: ' + error.message);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
           })
           .finally(() => {
             setLoading(false);
           });
       } catch (error) {
-        console.error("Google auth error:", error);
+        console.error('Google auth error:', error);
+        setError('Error processing Google sign-in');
         setLoading(false);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
+    } else if (response?.type === 'error') {
+      console.error('Google Sign-In Error:', response.error);
+      setError('Google sign-in failed: ' + (response.error?.message || 'Unknown error'));
     }
   }, [response]);
 
   const handleGoogleSignUp = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setLoading(true);
-    
+    if (!request) {
+      setError('Auth request not ready');
+      return;
+    }
     try {
-      await promptAsync();
+      setError(null);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      setLoading(true);
+      console.log('Starting Google sign-in process with redirect:', request?.redirectUri);
+      const result = await promptAsync();
+      console.log('Prompt result:', JSON.stringify(result, null, 2));
     } catch (error) {
-      console.error('Google sign in prompt error:', error);
-      setLoading(false);
+      console.error('Google sign-in prompt error:', error);
+      setError('Could not open Google sign-in: ' + (error instanceof Error ? error.message : String(error)));
+      Alert.alert('Error', 'Could not start Google Sign-In process');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setLoading(false);
     }
   };
-
+  
   const handleEmailSignUp = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push('/(auth)/register');
@@ -80,29 +111,36 @@ const MomentumApp: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
+
       {/* Logo */}
       <View style={styles.logoContainer}>
-        <Image 
+        <Image
           source={require('@/assets/images/momentum_logo.png')}
           style={styles.logo}
           resizeMode="contain"
         />
       </View>
-      
+
+      {/* Error message display */}
+      {error && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
+
       {/* Main background image */}
       <View style={styles.imageContainer}>
-        <Image 
+        <Image
           source={require('@/assets/images/muscular.jpeg')}
-          style={styles.backgroundImage} 
+          style={styles.backgroundImage}
           resizeMode="cover"
         />
       </View>
-      
+
       {/* Login options */}
       <View style={styles.loginContainer}>
-        <TouchableOpacity 
-          style={styles.googleButton} 
+        <TouchableOpacity
+          style={styles.googleButton}
           onPress={handleGoogleSignUp}
           disabled={loading || !request}
         >
@@ -117,15 +155,15 @@ const MomentumApp: React.FC = () => {
             </>
           )}
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.emailButton} 
+
+        <TouchableOpacity
+          style={styles.emailButton}
           onPress={handleEmailSignUp}
           disabled={loading}
         >
           <Text style={styles.emailButtonText}>Sign up with email</Text>
         </TouchableOpacity>
-        
+
         <View style={styles.loginTextContainer}>
           <Text style={styles.loginText}>Already have account? </Text>
           <TouchableOpacity onPress={handleLogin} disabled={loading}>
@@ -147,7 +185,6 @@ const styles = StyleSheet.create({
     height: 18,
     resizeMode: 'contain',
   },
-  
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -190,7 +227,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
-    overflow: 'hidden', // makes it cleanly rounded
+    overflow: 'hidden',
   },
   googleIconText: {
     color: '#EA4335',
@@ -230,6 +267,17 @@ const styles = StyleSheet.create({
     color: '#1E88E5',
     fontSize: 14,
     fontWeight: '600',
+  },
+  errorContainer: {
+    padding: 10,
+    backgroundColor: 'rgba(255, 0, 0, 0.1)',
+    marginHorizontal: 20,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
   },
 });
 

@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "momentum",
+    "scheme": "com.krf0821.momentum",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -42,7 +42,7 @@
       },
       "googleWebClientId": "443859253397-j8r0bfv4lv1kptt5gpbfh5pr58e0df71.apps.googleusercontent.com",
       "googleIosClientId": "YOUR_IOS_CLIENT_ID.apps.googleusercontent.com",
-      "googleAndroidClientId": "YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com",
+      "googleAndroidClientId": "443859253397-t9nlfh326arq2aid4evjr81i2j72u5rg.apps.googleusercontent.com",
       "router": {
         "origin": false
       }

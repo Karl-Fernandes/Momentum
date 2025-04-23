@@ -26,6 +26,7 @@
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="momentum"/>
         <data android:scheme="com.krf0821.momentum"/>
+        <data android:scheme="com.krf0821.momentum"/>
       </intent-filter>
     </activity>
   </application>
