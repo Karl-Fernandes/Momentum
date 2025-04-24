@@ -10,12 +10,81 @@ import {
   Image
 } from 'react-native';
 import { Checkbox } from 'react-native-paper';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '@/firebase/config';
+import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 
 const RegisterScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [checked, setChecked] = useState(false);
+  const [termsError, setTermsError] = useState('');
+  const [loading, setLoading] = useState(false); // Add loading state
+  const [error, setError] = useState<string | null>(null); // For general errors
+  const router = useRouter();
+  
+
+  const signUp = async () => {
+    // Reset previous error
+    setTermsError('');
+    setError(null);
+
+    if (!email || !password || !username) {
+      setError('Please fill in all fields');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+    
+    // Check if terms are accepted
+    if (!checked) {
+      setTermsError('Please accept the terms and conditions to continue');
+      return;
+    }
+
+    setLoading(true); // Set loading to true
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); // Trigger haptic feedback
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      await updateProfile(user, {displayName: username});
+
+      // 3. Store additional user data in Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        username: username,
+        email: email,
+        createdAt: new Date(),
+    });
+    
+    console.log('User registered successfully:', user.uid);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); // Trigger haptic feedback
+    router.push('../(tabs)/'); // Navigate to login screen
+
+  } catch (error: any) {
+    let errorMessage = "Registration failed. Please try again.";
+
+    if (error.code === 'auth/email-already-in-use') {
+      errorMessage = "Email already in use. Please use a different email.";
+    } else if (error.code === 'auth/invalid-email') {
+      errorMessage = "Invalid email address format.";
+    } else if (error.code === 'auth/weak-password') {
+      errorMessage = "Password is too weak. Please use a stronger password.";
+    }
+    
+    setError(errorMessage);
+    console.error("Registration error:", error);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); // Trigger haptic feedback
+  } finally {
+    setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -68,7 +137,10 @@ const RegisterScreen = () => {
         <View style={styles.termsContainer}>
           <Checkbox
             status={checked ? 'checked' : 'unchecked'}
-            onPress={() => setChecked(!checked)}
+            onPress={() => {
+              setChecked(!checked);
+              if (termsError) setTermsError(''); // Clear error when they check the box
+            }}
             color="#0074E4"
             uncheckedColor="#888"
           />
@@ -80,8 +152,14 @@ const RegisterScreen = () => {
           </Text>
         </View>
         
+        {/* Error message */}
+        {termsError ? <Text style={styles.errorText}>{termsError}</Text> : null}
+        
         {/* Continue Button */}
-        <TouchableOpacity style={styles.continueButton}>
+        <TouchableOpacity 
+          style={styles.continueButton}
+          onPress={signUp}
+        >
           <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>
       </View>
@@ -157,6 +235,11 @@ const styles = StyleSheet.create({
   },
   privacyLink: {
     color: '#0074E4',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 14,
+    marginTop: 5,
   },
   continueButton: {
     backgroundColor: '#0074E4',
